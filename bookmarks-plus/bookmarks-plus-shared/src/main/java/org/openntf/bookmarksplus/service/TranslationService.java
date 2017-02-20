@@ -14,14 +14,22 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
+import org.openntf.bookmarksplus.app.AppDatabaseDef;
+import org.openntf.bookmarksplus.app.AppManifest;
 
 import com.darwino.commons.Platform;
+import com.darwino.commons.json.JsonException;
 import com.darwino.commons.json.JsonObject;
 import com.darwino.commons.log.Logger;
 import com.darwino.commons.services.AbstractHttpService;
 import com.darwino.commons.services.HttpServiceContext;
 import com.darwino.commons.util.StringUtil;
 import com.darwino.ibm.watson.LanguageTranslationFactory;
+import com.darwino.jsonstore.Database;
+import com.darwino.jsonstore.Document;
+import com.darwino.jsonstore.Session;
+import com.darwino.jsonstore.Store;
+import com.darwino.platform.DarwinoContext;
 import com.ibm.watson.developer_cloud.http.ServiceCall;
 import com.ibm.watson.developer_cloud.language_translation.v2.LanguageTranslation;
 import com.ibm.watson.developer_cloud.language_translation.v2.model.Language;
@@ -71,22 +79,49 @@ public class TranslationService extends AbstractHttpService {
 		JsonObject result = new JsonObject();
 		result.put(PROP_URL, url);
 		
-		String translated = null;
 		String type = context.getQueryParameterString(PARAM_TYPE);
-		if(StringUtil.equals(type, TYPE_HTML)) {
-			translated = getTranslatedHTML(url, lang);
-		} else {
-			translated = getTranslatedText(url, lang);
-		}
+		String translated = getOrCacheTranslation(url, lang, type);
 		
 		result.put(PROP_RESULT, translated);
 		
 		String direct = context.getQueryParameterString(PARAM_DIRECT);
 		if("true".equals(direct)) {
-			context.emitHtml(translated);
+			if(TYPE_HTML.equals(type)) {
+				context.emitHtml(translated);
+			} else {
+				context.emitText(translated);
+			}
 		} else {
 			context.emitJson(result);
 		}
+	}
+	
+	private String getOrCacheTranslation(String url, Language lang, String type) throws IOException, JsonException {
+		DarwinoContext darwinoContext = DarwinoContext.get();
+		Session session = darwinoContext.getSession();
+		Database database = session.getDatabase(AppDatabaseDef.DATABASE_NAME);
+		Store store = database.getStore(Database.STORE_DEFAULT);
+		String key = url + lang + type;
+		Document doc = null;
+		if(!store.documentExists(key)) {
+			if(log.isWarnEnabled()) {
+				log.warn("{0}: key '{1}' not cached; fetching new", getClass().getSimpleName(), key);
+			}
+			
+			doc = store.newDocument(key);
+			
+			String translated = null;
+			if(StringUtil.equals(type, TYPE_HTML)) {
+				translated = getTranslatedHTML(url, lang);
+			} else {
+				translated = getTranslatedText(url, lang);
+			}
+			doc.set(PROP_RESULT, translated);
+			doc.save();
+		} else {
+			doc = store.loadDocument(key);
+		}
+		return doc.getString(PROP_RESULT);
 	}
 	
 	private String getTranslatedText(String url, Language lang) throws IOException {
@@ -126,11 +161,18 @@ public class TranslationService extends AbstractHttpService {
 			sourceLang = getLangForName(htmlLang);
 		}
 		
-		List<String> text = Arrays.asList(doc.body().text());
-		ServiceCall<TranslationResult> promise = translator.translate(text, sourceLang, lang);
-		TranslationResult trans = promise.execute();
+		String bodyText = doc.body().text();
+		StringBuilder result = new StringBuilder();
+		// Break it up into 40K chunks
+		for(int i = 0; i < bodyText.length(); i += 40 * 1024) {
+			int chunkEnd = bodyText.length() > i+40*1024 ? i+40*1024 : bodyText.length()-1;
+			String substr = bodyText.substring(i, chunkEnd);
+			ServiceCall<TranslationResult> promise = translator.translate(substr, sourceLang, lang);
+			TranslationResult trans = promise.execute();
+			result.append(trans.getFirstTranslation());
+		}
 		
-		return trans.getFirstTranslation();
+		return result.toString();
 	}
 	
 	private String getTranslatedHTML(String url, Language lang) throws IOException {
@@ -181,30 +223,33 @@ public class TranslationService extends AbstractHttpService {
 		System.out.println("Source size " + allText.size() + ": " + allText);
 		List<String> allTranslated = new ArrayList<>(allText.size());
 		
-
-		ServiceCall<TranslationResult> promise = translator.translate(allText, sourceLang, lang);
+		// Do only up to 40K at a time (fudged for overhead)
+		int queueSize = 0;
+		List<String> textQueue = new ArrayList<>();
+		for(String textEntry : allText) {
+			queueSize += textEntry.getBytes().length;
+			if(queueSize < 40 * 1024) {
+				textQueue.add(textEntry);
+			} else {
+				// Flush the queue
+				ServiceCall<TranslationResult> promise = translator.translate(textQueue, sourceLang, lang);
+				TranslationResult trans = promise.execute();
+				List<Translation> translations = trans.getTranslations();
+				for(Translation translation : translations) {
+					allTranslated.add(translation.getTranslation());
+				}
+				
+				queueSize = 0;
+				textQueue.clear();
+			}
+		}
+		// If there's anything in the queue, flush that
+		ServiceCall<TranslationResult> promise = translator.translate(textQueue, sourceLang, lang);
 		TranslationResult trans = promise.execute();
 		List<Translation> translations = trans.getTranslations();
 		for(Translation translation : translations) {
 			allTranslated.add(translation.getTranslation());
 		}
-		
-		// Do 20 strings at a time
-//		for(int i = 0; i < allText.size(); i += 20) {
-//			int lastIndex = allText.size() > i + 20 ? i + 20 : allText.size();
-//			System.out.println("Going to build a block from index " + i + " to index " + lastIndex);
-//			List<String> block = allText.subList(i, lastIndex);
-//
-//			ServiceCall<TranslationResult> promise = translator.translate(block, sourceLang, lang);
-//			TranslationResult trans = promise.execute();
-//			List<Translation> translations = trans.getTranslations();
-//			System.out.println("Got result size " + translations.size());
-//			
-//			for(Translation translation : translations) {
-//				allTranslated.add(translation.getTranslation());
-//			}
-//		}
-//		System.out.println("Translated size " + allTranslated.size() + ": " + allTranslated);
 		
 		// Try to add a base href
 		Elements baseElements = doc.getElementsByTag("base");
@@ -223,7 +268,10 @@ public class TranslationService extends AbstractHttpService {
 		// Now rebuild the result
 		for(int i = 0; i < allText.size(); i++) {
 			String from = allText.get(i);
-			String to = allTranslated.get(i);
+			String to = "";
+			if(allTranslated.size() > i) {
+				to = allTranslated.get(i);
+			}
 			
 			if(log.isDebugEnabled()) {
 				log.debug("Translated '{0}' to '{1}'", from, to);
