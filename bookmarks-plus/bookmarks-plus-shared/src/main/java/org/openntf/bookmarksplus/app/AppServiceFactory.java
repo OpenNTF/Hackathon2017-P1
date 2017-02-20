@@ -6,6 +6,8 @@ package org.openntf.bookmarksplus.app;
 
 import java.util.List;
 
+import org.openntf.bookmarksplus.service.TranslationService;
+
 import com.darwino.commons.json.JsonArray;
 import com.darwino.commons.json.JsonObject;
 import com.darwino.commons.services.HttpService;
@@ -128,6 +130,12 @@ public class AppServiceFactory extends RestServiceFactory {
 			@Override
 			public HttpService createService(HttpServiceContext context, String[] parts) {
 				return new Properties();
+			}
+		});
+		
+		binders.add(new RestServiceBinder("translate") {
+			@Override public HttpService createService(HttpServiceContext context, String[] parts) {
+				return new TranslationService();
 			}
 		});
 	}	

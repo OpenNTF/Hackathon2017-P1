@@ -24,6 +24,19 @@
 			<artifactId>dwo-services-social</artifactId>
 			<version>${DARWINO_VERSION}</version>
 		</dependency>
+		 <dependency>
+		 	<groupId>com.darwino</groupId>
+		 	<artifactId>dwo-jre-ibm-watson</artifactId>
+		 	<version>${DARWINO_VERSION}</version>
+		 </dependency>
+		 <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+<dependency>
+    <groupId>org.jsoup</groupId>
+    <artifactId>jsoup</artifactId>
+    <version>1.10.2</version>
+</dependency>
+
+		 
 	</dependencies>
 	
 	<build>

@@ -66,11 +66,6 @@
 			<artifactId>dwo-web-darwino</artifactId>
 			<version>${DARWINO_VERSION}</version>
 		</dependency>
-		 <dependency>
-		 	<groupId>com.darwino</groupId>
-		 	<artifactId>dwo-jre-ibm-watson</artifactId>
-		 	<version>${DARWINO_VERSION}</version>
-		 </dependency>
 
 		<dependency>
 			<groupId>org.openntf.bookmarksplus</groupId>

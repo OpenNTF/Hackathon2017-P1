@@ -19,7 +19,7 @@
         </list>    
     </bean>
     
-    <bean name="bookmarksplus" class="com.darwino.ibm.watson.LanguageTranslationFactory">
+    <bean name="bookmarksplus" type="ibmwatson/language_translation" class="com.darwino.ibm.watson.LanguageTranslationFactory">
  		<property name="url">https://gateway.watsonplatform.net/language-translator/api</property>
  		<property name="user">${bookmarksplus.translation.user}</property>
  		<property name="password">${bookmarksplus.translation.password}</property>
