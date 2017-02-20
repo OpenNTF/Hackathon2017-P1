@@ -1,0 +1,29 @@
+{
+	"name": "bookmarksplus",
+	"description": "This is a Darwino auto-generated application",
+	"type":"community_widget",
+	"urls":{
+	},
+	"payload": {
+		"defId": "Bookmarks Plus",
+		"showInPalette": "true",
+		"primaryWidget": "false",
+		"modes": "view",
+		"themes": "wpthemeThin wpthemeNarrow wpthemeWide wpthemeBanner",
+		"url": "https://apps.collabservnext.com/connections/resources/web/com.ibm.social.urliWidget.web.resources/widget/urlWidget.xml",
+		"itemSet": [
+			{
+				"name": "url",
+				"value": "/bookmarksplus/widget/ibm-community-app.html"
+			},
+			{
+				"name": "width",
+				"value": "100%"
+			},
+			{
+				"name": "height",
+				"value": "400px"
+			}
+		]
+	}
+}
