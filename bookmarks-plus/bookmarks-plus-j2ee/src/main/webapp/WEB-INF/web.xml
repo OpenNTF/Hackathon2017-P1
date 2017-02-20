@@ -138,19 +138,16 @@
     	<dispatcher>FORWARD</dispatcher>
     </filter-mapping>
 	
-	<!--  CORS filter for the JsonStore -->
-<!-- 	
 	<filter>
     	<filter-name>Cors</filter-name>
     	<filter-class>com.darwino.j2ee.servlet.cors.CORSFilter</filter-class>
 	</filter>
 	<filter-mapping>
     	<filter-name>Cors</filter-name>
-    	<url-pattern>/.darwino-jstore/*</url-pattern>
+    	<url-pattern>/.darwino-app/*</url-pattern>
     	<dispatcher>REQUEST</dispatcher>
     	<dispatcher>FORWARD</dispatcher>
     </filter-mapping>
--->    
 	
 	<!--  Filter for publishing the Darwino Services -->
 	<filter>
