@@ -1,0 +1,8 @@
+<beans>
+    <bean type="darwino/jsondb" name="bookmarksplus" class="com.darwino.config.jsonstore.JsonDbJdbc">
+    	<property name="db">${bookmarksplus.db.db}</property>    
+    	<property name="user">${bookmarksplus.db.user}</property>    
+    	<property name="password">${bookmarksplus.db.password}</property>    
+    	<property name="url">${bookmarksplus.db.url}</property>    
+    </bean>
+</beans>

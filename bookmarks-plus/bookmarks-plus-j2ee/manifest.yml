@@ -1,0 +1,14 @@
+---
+applications:
+- name: bookmarksplus
+  memory: 512M
+  host: bookmarksplus
+  domain: mybluemix.net
+  env:
+    bookmarksplus.db.db: compose
+    bookmarksplus.db.user: admin
+    bookmarksplus.db.password: KMWIHAZXBLSAJHRF
+    bookmarksplus.db.url: postgres://admin:KMWIHAZXBLSAJHRF@sl-us-dal-9-portal.0.dblayer.com:20014/compose
+  services:
+  - Language Translator-2c
+  - Compose for PostgreSQL-hr
